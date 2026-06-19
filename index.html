@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>청라 방과후 시간표</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* 가로 스크롤바 커스텀 스타일 추가 */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between py-4 items-start sm:items-center">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5 overflow-hidden w-full">
+                    <div class="flex items-center gap-2 shrink-0">
+                        <i class="ph-fill ph-student text-indigo-600 text-3xl"></i>
+                        <h1 class="text-xl font-bold text-gray-900 tracking-tight">청라 방과후 시간표</h1>
+                    </div>
+                    <div id="periodSelect" class="flex gap-2 overflow-x-auto hide-scrollbar pb-1 w-full">
+                        <!-- Buttons injected by JS -->
+                    </div>
+                </div>
+                <div class="shrink-0 ml-4">
+                    <button id="helpBtn" class="text-gray-500 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-gray-100">
+                        <i class="ph ph-question text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Controls / Filters -->
+        <div class="bg-white rounded-2xl shadow-sm p-5 mb-8 border border-gray-100">
+            <div class="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                
+                <!-- Search Input -->
+                <div class="w-full md:w-1/3">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-magnifying-glass text-gray-400 text-lg"></i>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="강좌명, 장소 검색..." 
+                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-colors">
+                    </div>
+                </div>
+
+                <!-- Day Filter -->
+                <div class="w-full md:w-auto">
+                    <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-1" id="dayFilters">
+                        <!-- Buttons injected by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Schedule Grid -->
+        <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <!-- Columns injected by JS -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <p class="flex items-center justify-center gap-1.5 text-sm text-gray-500">
+                <i class="ph ph-phone text-lg"></i>
+                문의: 인천청라초등학교 늘봄지원실 (032-509-9593)
+            </p>
+        </div>
+    </footer>
+
+    <!-- Class Detail Modal -->
+    <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div id="modalBadges" class="flex gap-2 mb-2"></div>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
+                </div>
+                <h3 id="modalSubject" class="text-2xl font-bold text-gray-900 mb-1">과목명</h3>
+                
+                <div class="space-y-4 bg-gray-50 p-4 rounded-xl mt-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-500">
+                            <i class="ph ph-clock text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">수업 시간</p>
+                            <p id="modalTime" class="font-medium text-gray-900">요일 및 시간</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-500">
+                            <i class="ph ph-map-pin text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">강의실 (장소)</p>
+                            <p id="modalRoom" class="font-medium text-gray-900">장소</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-indigo-500">
+                            <i class="ph ph-users text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">정원</p>
+                            <p id="modalCapacity" class="font-medium text-gray-900">20명 (예상)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h4 class="text-sm font-bold text-gray-900 mb-2">안내사항</h4>
+                    <p id="modalDescription" class="text-sm text-gray-600 leading-relaxed">
+                        상세 강의 계획서 및 준비물 안내는 학교 홈페이지 공지사항을 참조해 주시기 바랍니다.
+                    </p>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-end">
+                <button id="closeModalBtn2" class="px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // ==========================================
+        // CSV Data Injection
+        // ==========================================
+        const rawCSV = `운영기간,강좌명,요일,시간,장소
+6.15.~7.24.,논술A,수,13:50~15:10,늘봄교실5(3층 연결통로)
+6.15.~7.24.,논술B,수,15:20~16:40,늘봄교실5(3층 연결통로)
+6.15.~7.24.,도예A,목,13:50~15:10,늘봄교실5(3층 연결통로)
+6.15.~7.24.,도예B,목,15:20~16:40,늘봄교실5(3층 연결통로)
+6.15.~7.24.,드론항공A,목,13:50~15:10,1과학실(후관 1층)
+6.15.~7.24.,드론항공B,목,15:20~16:40,1과학실(후관 1층)
+6.15.~7.24.,레고코딩A,금,13:00~14:20,1과학실(후관 1층)
+6.15.~7.24.,레고코딩B,금,14:30~15:50,1과학실(후관 1층)
+6.15.~7.24.,로봇제작A,화,13:50~15:10,1과학실(후관 1층)
+6.15.~7.24.,로봇제작B,화,15:20~16:40,1과학실(후관 1층)
+6.15.~7.24.,마술A,수,13:50~15:10,늘봄교실4(3층 연결통로)
+6.15.~7.24.,마술B,수,15:20~16:40,늘봄교실4(3층 연결통로)
+6.15.~7.24.,미술A,금,13:00~14:20,늘봄교실4(3층 연결통로)
+6.15.~7.24.,미술B,금,14:30~15:50,늘봄교실4(3층 연결통로)
+6.15.~7.24.,바둑A,목,13:50~15:10,늘봄교실4(3층 연결통로)
+6.15.~7.24.,바둑B,목,15:20~16:40,늘봄교실4(3층 연결통로)
+6.15.~7.24.,바이올린A,월,13:00~14:20,음악실(후관 5층)
+6.15.~7.24.,바이올린B,월,14:30~15:50,음악실(후관 5층)
+6.15.~7.24.,방송댄스A,화,13:50~15:10,음악실(후관 5층)
+6.15.~7.24.,방송댄스B,화,15:20~16:40,음악실(후관 5층)
+6.15.~7.24.,배드민턴A,금,13:00~13:50,강당(본관 3층)
+6.15.~7.24.,배드민턴B,금,14:00~14:50,강당(본관 3층)
+6.15.~7.24.,배드민턴C,금,15:00~15:50,강당(본관 3층)
+6.15.~7.24.,배드민턴D,금,16:00~16:50,강당(본관 3층)
+6.15.~7.24.,보드게임A,목,13:50~15:10,커뮤니티실(본관 1층)
+6.15.~7.24.,보드게임B,목,15:20~16:40,커뮤니티실(본관 1층)
+6.15.~7.24.,생명과학A,수,13:50~15:10,1과학실(후관 1층)
+6.15.~7.24.,생명과학B,수,15:20~16:40,1과학실(후관 1층)
+6.15.~7.24.,수학A(1-2학년),월/수/금,13:00~13:50,늘봄교실6(후관 4층)
+6.15.~7.24.,수학B(3-6학년),월/수/금,14:00~14:50,늘봄교실6(후관 4층)
+6.15.~7.24.,수학C(5-6학년),월/수/금,15:00~15:50,늘봄교실6(후관 4층)
+6.15.~7.24.,역사A,화,13:50~15:10,늘봄교실4(3층 연결통로)
+6.15.~7.24.,역사B,화,15:20~16:40,늘봄교실4(3층 연결통로)
+6.15.~7.24.,영어A(Dream),화/목,13:50~14:40,늘봄교실6(후관 4층)
+6.15.~7.24.,영어B(Run),화/목,14:50~15:40,늘봄교실6(후관 4층)
+6.15.~7.24.,영어C(Jump),화/목,15:50~16:40,늘봄교실6(후관 4층)
+6.15.~7.24.,요리A,월,13:00~14:20,커뮤니티실(본관 1층)
+6.15.~7.24.,요리B,월,14:30~15:50,커뮤니티실(본관 1층)
+6.15.~7.24.,요리C,금,13:00~14:20,커뮤니티실(본관 1층)
+6.15.~7.24.,요리D,금,14:30~15:50,커뮤니티실(본관 1층)
+6.15.~7.24.,우쿨렐레&통기타A,수,13:50~15:10,음악실(후관 5층)
+6.15.~7.24.,웹툰A,화,13:50~15:10,늘봄교실5(3층 연결통로)
+6.15.~7.24.,웹툰B,화,15:20~16:40,늘봄교실5(3층 연결통로)
+6.15.~7.24.,음악줄넘기A,월,13:00~13:50,강당(본관 3층)
+6.15.~7.24.,음악줄넘기B,월,14:00~14:50,강당(본관 3층)
+6.15.~7.24.,음악줄넘기C,월,15:00~15:50,강당(본관 3층)
+6.15.~7.24.,주산A,월,13:00~14:20,늘봄교실4(3층 연결통로)
+6.15.~7.24.,주산B,월,14:30~15:50,늘봄교실4(3층 연결통로)
+6.15.~7.24.,창의과학A,월,13:00~14:20,1과학실(후관 1층)
+6.15.~7.24.,창의과학B,월,14:30~15:50,1과학실(후관 1층)
+6.15.~7.24.,체스A,월,13:00~14:20,늘봄교실5(3층 연결통로)
+6.15.~7.24.,체스B,월,14:30~15:50,늘봄교실5(3층 연결통로)
+6.15.~7.24.,축구A,목,13:50~15:10,강당(본관 3층)
+6.15.~7.24.,축구B,목,15:20~16:40,강당(본관 3층)
+6.15.~7.24.,컴퓨터(꾸러기코딩),화/목,13:50~14:40,컴퓨터실(2층 연결통로)
+6.15.~7.24.,컴퓨터(자격A),화/수,14:50~15:40,컴퓨터실(2층 연결통로)
+6.15.~7.24.,컴퓨터(자격B),목/금,15:50~16:40,컴퓨터실(2층 연결통로)
+6.15.~7.24.,컴퓨터(컴마스터),목/금,14:50~15:40,컴퓨터실(2층 연결통로)
+6.15.~7.24.,컴퓨터(컴박사),수/금,13:50~14:40,컴퓨터실(2층 연결통로)
+6.15.~7.24.,컴퓨터(코딩자격),월,14:40~16:20,컴퓨터실(2층 연결통로)
+6.15.~7.24.,클레이A,화,13:50~15:10,커뮤니티실(본관 1층)
+6.15.~7.24.,클레이B,화,15:20~16:40,커뮤니티실(본관 1층)
+6.15.~7.24.,탁구A,수,13:50~15:10,강당(본관 3층)
+6.15.~7.24.,탁구B,수,15:20~16:40,강당(본관 3층)
+6.15.~7.24.,피아노(주2A),월/금,13:00~13:50,피아노실(후관 5층)
+6.15.~7.24.,피아노(주2B),월/금,14:00~14:50,피아노실(후관 5층)
+6.15.~7.24.,피아노(주2C),월/금,15:00~15:50,피아노실(후관 5층)
+6.15.~7.24.,피아노(주3A),화/수/목,13:50~14:40,피아노실(후관 5층)
+6.15.~7.24.,피아노(주3B),화/수/목,14:50~15:40,피아노실(후관 5층)
+6.15.~7.24.,피아노(주3C),화/수/목,15:50~16:40,피아노실(후관 5층)
+6.15.~7.24.,한자A,금,13:00~14:20,늘봄교실5(3층 연결통로)
+6.15.~7.24.,한자B,금,14:30~15:50,늘봄교실5(3층 연결통로)
+8.18.~9.11.,논술A,수,13:50~15:10,늘봄교실5(3층 연결통로)
+8.18.~9.11.,논술B,수,15:20~16:40,늘봄교실5(3층 연결통로)
+8.18.~9.11.,도예A,목,13:50~15:10,늘봄교실5(3층 연결통로)
+8.18.~9.11.,도예B,목,15:20~16:40,늘봄교실5(3층 연결통로)
+8.18.~9.11.,드론항공A,목,13:50~15:10,1과학실(후관 1층)
+8.18.~9.11.,드론항공B,목,15:20~16:40,1과학실(후관 1층)
+8.18.~9.11.,레고코딩A,금,13:00~14:20,1과학실(후관 1층)
+8.18.~9.11.,레고코딩B,금,14:30~15:50,1과학실(후관 1층)
+8.18.~9.11.,로봇제작A,화,13:50~15:10,1과학실(후관 1층)
+8.18.~9.11.,로봇제작B,화,15:20~16:40,1과학실(후관 1층)
+8.18.~9.11.,마술A,수,13:50~15:10,늘봄교실4(3층 연결통로)
+8.18.~9.11.,마술B,수,15:20~16:40,늘봄교실4(3층 연결통로)
+8.18.~9.11.,미술A,금,13:00~14:20,늘봄교실4(3층 연결통로)
+8.18.~9.11.,미술B,금,14:30~15:50,늘봄교실4(3층 연결통로)
+8.18.~9.11.,바둑A,목,13:50~15:10,늘봄교실4(3층 연결통로)
+8.18.~9.11.,바둑B,목,15:20~16:40,늘봄교실4(3층 연결통로)
+8.18.~9.11.,바이올린A,월,13:00~14:20,음악실(후관 5층)
+8.18.~9.11.,바이올린B,월,14:30~15:50,음악실(후관 5층)
+8.18.~9.11.,방송댄스A,화,13:50~15:10,음악실(후관 5층)
+8.18.~9.11.,방송댄스B,화,15:20~16:40,음악실(후관 5층)
+8.18.~9.11.,배드민턴A,금,13:00~13:50,강당(본관 3층)
+8.18.~9.11.,배드민턴B,금,14:00~14:50,강당(본관 3층)
+8.18.~9.11.,배드민턴C,금,15:00~15:50,강당(본관 3층)
+8.18.~9.11.,배드민턴D,금,16:00~16:50,강당(본관 3층)
+8.18.~9.11.,보드게임A,목,13:50~15:10,커뮤니티실(본관 1층)
+8.18.~9.11.,보드게임B,목,15:20~16:40,커뮤니티실(본관 1층)
+8.18.~9.11.,생명과학A,수,13:50~15:10,1과학실(후관 1층)
+8.18.~9.11.,생명과학B,수,15:20~16:40,1과학실(후관 1층)
+8.18.~9.11.,수학A(1-2학년),월/수/금,13:00~13:50,늘봄교실6(후관 4층)
+8.18.~9.11.,수학B(3-6학년),월/수/금,14:00~14:50,늘봄교실6(후관 4층)
+8.18.~9.11.,수학C(5-6학년),월/수/금,15:00~15:50,늘봄교실6(후관 4층)
+8.18.~9.11.,역사A,화,13:50~15:10,늘봄교실4(3층 연결통로)
+8.18.~9.11.,역사B,화,15:20~16:40,늘봄교실4(3층 연결통로)
+8.18.~9.11.,영어A(Dream),화/목,13:50~14:40,늘봄교실6(후관 4층)
+8.18.~9.11.,영어B(Run),화/목,14:50~15:40,늘봄교실6(후관 4층)
+8.18.~9.11.,영어C(Jump),화/목,15:50~16:40,늘봄교실6(후관 4층)
+8.18.~9.11.,요리A,월,13:00~14:20,커뮤니티실(본관 1층)
+8.18.~9.11.,요리B,월,14:30~15:50,커뮤니티실(본관 1층)
+8.18.~9.11.,요리C,금,13:00~14:20,커뮤니티실(본관 1층)
+8.18.~9.11.,요리D,금,14:30~15:50,커뮤니티실(본관 1층)
+8.18.~9.11.,우쿨렐레&통기타A,수,13:50~15:10,음악실(후관 5층)
+8.18.~9.11.,웹툰A,화,13:50~15:10,늘봄교실5(3층 연결통로)
+8.18.~9.11.,웹툰B,화,15:20~16:40,늘봄교실5(3층 연결통로)
+8.18.~9.11.,음악줄넘기A,월,13:00~13:50,강당(본관 3층)
+8.18.~9.11.,음악줄넘기B,월,14:00~14:50,강당(본관 3층)
+8.18.~9.11.,음악줄넘기C,월,15:00~15:50,강당(본관 3층)
+8.18.~9.11.,주산A,월,13:00~14:20,늘봄교실4(3층 연결통로)
+8.18.~9.11.,주산B,월,14:30~15:50,늘봄교실4(3층 연결통로)
+8.18.~9.11.,창의과학A,월,13:00~14:20,1과학실(후관 1층)
+8.18.~9.11.,창의과학B,월,14:30~15:50,1과학실(후관 1층)
+8.18.~9.11.,체스A,월,13:00~14:20,늘봄교실5(3층 연결통로)
+8.18.~9.11.,체스B,월,14:30~15:50,늘봄교실5(3층 연결통로)
+8.18.~9.11.,축구A,목,13:50~15:10,강당(본관 3층)
+8.18.~9.11.,축구B,목,15:20~16:40,강당(본관 3층)
+8.18.~9.11.,컴퓨터(꾸러기코딩),화/목,13:50~14:40,컴퓨터실(2층 연결통로)
+8.18.~9.11.,컴퓨터(자격A),화/수,14:50~15:40,컴퓨터실(2층 연결통로)
+8.18.~9.11.,컴퓨터(자격B),목/금,15:50~16:40,컴퓨터실(2층 연결통로)
+8.18.~9.11.,컴퓨터(컴마스터),목/금,14:50~15:40,컴퓨터실(2층 연결통로)
+8.18.~9.11.,컴퓨터(컴박사),수/금,13:50~14:40,컴퓨터실(2층 연결통로)
+8.18.~9.11.,컴퓨터(코딩자격),월,14:40~16:20,컴퓨터실(2층 연결통로)
+8.18.~9.11.,클레이A,화,13:50~15:10,커뮤니티실(본관 1층)
+8.18.~9.11.,클레이B,화,15:20~16:40,커뮤니티실(본관 1층)
+8.18.~9.11.,탁구A,수,13:50~15:10,강당(본관 3층)
+8.18.~9.11.,탁구B,수,15:20~16:40,강당(본관 3층)
+8.18.~9.11.,피아노(주2A),월/금,13:00~13:50,피아노실(후관 5층)
+8.18.~9.11.,피아노(주2B),월/금,14:00~14:50,피아노실(후관 5층)
+8.18.~9.11.,피아노(주2C),월/금,15:00~15:50,피아노실(후관 5층)
+8.18.~9.11.,피아노(주3A),화/수/목,13:50~14:40,피아노실(후관 5층)
+8.18.~9.11.,피아노(주3B),화/수/목,14:50~15:40,피아노실(후관 5층)
+8.18.~9.11.,피아노(주3C),화/수/목,15:50~16:40,피아노실(후관 5층)
+8.18.~9.11.,한자A,금,13:00~14:20,늘봄교실5(3층 연결통로)
+8.18.~9.11.,한자B,금,14:30~15:50,늘봄교실5(3층 연결통로)
+8.3.~8.14.,논술A,수,09:30~10:50,늘봄교실5(3층 연결통로)
+8.3.~8.14.,논술B,수,11:00~12:20,늘봄교실5(3층 연결통로)
+8.3.~8.14.,도예A,목,09:30~10:50,늘봄교실5(3층 연결통로)
+8.3.~8.14.,도예B,목,11:00~12:20,늘봄교실5(3층 연결통로)
+8.3.~8.14.,드론항공A,목,09:30~10:50,1과학실(후관 1층)
+8.3.~8.14.,드론항공B,목,11:00~12:20,1과학실(후관 1층)
+8.3.~8.14.,레고코딩A,금,09:30~10:50,1과학실(후관 1층)
+8.3.~8.14.,레고코딩B,금,11:00~12:20,1과학실(후관 1층)
+8.3.~8.14.,로봇제작A,화,09:30~10:50,1과학실(후관 1층)
+8.3.~8.14.,로봇제작B,화,11:00~12:20,1과학실(후관 1층)
+8.3.~8.14.,마술A,수,09:30~10:50,늘봄교실4(3층 연결통로)
+8.3.~8.14.,마술B,수,11:00~12:20,늘봄교실4(3층 연결통로)
+8.3.~8.14.,미술A,금,09:30~10:50,늘봄교실4(3층 연결통로)
+8.3.~8.14.,미술B,금,11:00~12:20,늘봄교실4(3층 연결통로)
+8.3.~8.14.,바둑A,목,09:30~10:50,늘봄교실4(3층 연결통로)
+8.3.~8.14.,바둑B,목,11:00~12:20,늘봄교실4(3층 연결통로)
+8.3.~8.14.,바이올린A,월,09:30~10:50,음악실(후관 5층)
+8.3.~8.14.,바이올린B,월,11:00~12:20,음악실(후관 5층)
+8.3.~8.14.,방송댄스A,화,09:30~10:50,음악실(후관 5층)
+8.3.~8.14.,방송댄스B,화,11:00~12:20,음악실(후관 5층)
+8.3.~8.14.,배드민턴A,금,9:30~10:20,강당(본관 3층)
+8.3.~8.14.,배드민턴B,금,10:30~11:20,강당(본관 3층)
+8.3.~8.14.,배드민턴C,금,11:30~12:20,강당(본관 3층)
+8.3.~8.14.,배드민턴D,금,12:30~13:20,강당(본관 3층)
+8.3.~8.14.,보드게임A,목,09:30~10:50,커뮤니티실(본관 1층)
+8.3.~8.14.,보드게임B,목,11:00~12:20,커뮤니티실(본관 1층)
+8.3.~8.14.,생명과학A,수,09:30~10:50,1과학실(후관 1층)
+8.3.~8.14.,생명과학B,수,11:00~12:20,1과학실(후관 1층)
+8.3.~8.14.,수학A(1-2학년),월/수/금,9:30~10:20,늘봄교실6(후관 4층)
+8.3.~8.14.,수학B(3-6학년),월/수/금,10:30~11:20,늘봄교실6(후관 4층)
+8.3.~8.14.,수학C(5-6학년),월/수/금,11:30~12:20,늘봄교실6(후관 4층)
+8.3.~8.14.,역사A,화,09:30~10:50,늘봄교실4(3층 연결통로)
+8.3.~8.14.,역사B,화,11:00~12:20,늘봄교실4(3층 연결통로)
+8.3.~8.14.,영어A(Dream),화/목,9:30~10:20,늘봄교실6(후관 4층)
+8.3.~8.14.,영어B(Run),화/목,10:30~11:20,늘봄교실6(후관 4층)
+8.3.~8.14.,영어C(Jump),화/목,11:30~12:20,늘봄교실6(후관 4층)
+8.3.~8.14.,요리A,월,09:30~10:50,커뮤니티실(본관 1층)
+8.3.~8.14.,요리B,월,11:00~12:20,커뮤니티실(본관 1층)
+8.3.~8.14.,요리C,금,09:30~10:50,커뮤니티실(본관 1층)
+8.3.~8.14.,요리D,금,11:00~12:20,커뮤니티실(본관 1층)
+8.3.~8.14.,우쿨렐레&통기타A,수,09:30~10:50,음악실(후관 5층)
+8.3.~8.14.,웹툰A,화,09:30~10:50,늘봄교실5(3층 연결통로)
+8.3.~8.14.,웹툰B,화,11:00~12:20,늘봄교실5(3층 연결통로)
+8.3.~8.14.,음악줄넘기A,월,9:30~10:20,강당(본관 3층)
+8.3.~8.14.,음악줄넘기B,월,10:30~11:20,강당(본관 3층)
+8.3.~8.14.,음악줄넘기C,월,11:30~12:20,강당(본관 3층)
+8.3.~8.14.,주산A,월,09:30~10:50,늘봄교실4(3층 연결통로)
+8.3.~8.14.,주산B,월,11:00~12:20,늘봄교실4(3층 연결통로)
+8.3.~8.14.,창의과학A,월,09:30~10:50,1과학실(후관 1층)
+8.3.~8.14.,창의과학B,월,11:00~12:20,1과학실(후관 1층)
+8.3.~8.14.,체스A,월,09:30~10:50,늘봄교실5(3층 연결통로)
+8.3.~8.14.,체스B,월,11:00~12:20,늘봄교실5(3층 연결통로)
+8.3.~8.14.,축구A,목,09:30~10:50,강당(본관 3층)
+8.3.~8.14.,축구B,목,11:00~12:20,강당(본관 3층)
+8.3.~8.14.,컴퓨터(꾸러기코딩),화/목,9:30~10:20,컴퓨터실(2층 연결통로)
+8.3.~8.14.,컴퓨터(자격A),화/수,10:30~11:20,컴퓨터실(2층 연결통로)
+8.3.~8.14.,컴퓨터(자격B),목/금,11:30~12:20,컴퓨터실(2층 연결통로)
+8.3.~8.14.,컴퓨터(컴마스터),목/금,10:30~11:20,컴퓨터실(2층 연결통로)
+8.3.~8.14.,컴퓨터(컴박사),수/금,9:30~10:20,컴퓨터실(2층 연결통로)
+8.3.~8.14.,컴퓨터(코딩자격),월,9:30~11:10,컴퓨터실(2층 연결통로)
+8.3.~8.14.,클레이A,화,09:30~10:50,커뮤니티실(본관 1층)
+8.3.~8.14.,클레이B,화,11:00~12:20,커뮤니티실(본관 1층)
+8.3.~8.14.,탁구A,수,09:30~10:50,강당(본관 3층)
+8.3.~8.14.,탁구B,수,11:00~12:20,강당(본관 3층)
+8.3.~8.14.,피아노(주2A),월/금,09:30~10:20,피아노실(후관 5층)
+8.3.~8.14.,피아노(주2B),월/금,10:30~11:20,피아노실(후관 5층)
+8.3.~8.14.,피아노(주2C),월/금,11:30~12:20,피아노실(후관 5층)
+8.3.~8.14.,피아노(주3A),화/수/목,09:30~10:20,피아노실(후관 5층)
+8.3.~8.14.,피아노(주3B),화/수/목,10:30~11:20,피아노실(후관 5층)
+8.3.~8.14.,피아노(주3C),화/수/목,11:30~12:20,피아노실(후관 5층)
+8.3.~8.14.,한자A,금,09:30~10:50,늘봄교실5(3층 연결통로)
+8.3.~8.14.,한자B,금,11:00~12:20,늘봄교실5(3층 연결통로)
+9.14.~12.31.,논술A,수,13:50~15:10,늘봄교실5(3층 연결통로)
+9.14.~12.31.,논술B,수,15:20~16:40,늘봄교실5(3층 연결통로)
+9.14.~12.31.,도예A,목,13:50~15:10,늘봄교실5(3층 연결통로)
+9.14.~12.31.,도예B,목,15:20~16:40,늘봄교실5(3층 연결통로)
+9.14.~12.31.,드론항공A,목,13:50~15:10,1과학실(후관 1층)
+9.14.~12.31.,드론항공B,목,15:20~16:40,1과학실(후관 1층)
+9.14.~12.31.,레고코딩A,금,13:00~14:20,1과학실(후관 1층)
+9.14.~12.31.,레고코딩B,금,14:30~15:50,1과학실(후관 1층)
+9.14.~12.31.,로봇제작A,화,13:50~15:10,1과학실(후관 1층)
+9.14.~12.31.,로봇제작B,화,15:20~16:40,1과학실(후관 1층)
+9.14.~12.31.,마술A,수,13:50~15:10,늘봄교실4(3층 연결통로)
+9.14.~12.31.,마술B,수,15:20~16:40,늘봄교실4(3층 연결통로)
+9.14.~12.31.,미술A,금,13:00~14:20,늘봄교실4(3층 연결통로)
+9.14.~12.31.,미술B,금,14:30~15:50,늘봄교실4(3층 연결통로)
+9.14.~12.31.,바둑A,목,13:50~15:10,늘봄교실4(3층 연결통로)
+9.14.~12.31.,바둑B,목,15:20~16:40,늘봄교실4(3층 연결통로)
+9.14.~12.31.,바이올린A,월,13:00~14:20,음악실(후관 5층)
+9.14.~12.31.,바이올린B,월,14:30~15:50,음악실(후관 5층)
+9.14.~12.31.,방송댄스A,화,13:50~15:10,음악실(후관 5층)
+9.14.~12.31.,방송댄스B,화,15:20~16:40,음악실(후관 5층)
+9.14.~12.31.,배드민턴A,금,13:00~13:50,강당(본관 3층)
+9.14.~12.31.,배드민턴B,금,14:00~14:50,강당(본관 3층)
+9.14.~12.31.,배드민턴C,금,15:00~15:50,강당(본관 3층)
+9.14.~12.31.,배드민턴D,금,16:00~16:50,강당(본관 3층)
+9.14.~12.31.,보드게임A,목,13:50~15:10,커뮤니티실(본관 1층)
+9.14.~12.31.,보드게임B,목,15:20~16:40,커뮤니티실(본관 1층)
+9.14.~12.31.,생명과학A,수,13:50~15:10,1과학실(후관 1층)
+9.14.~12.31.,생명과학B,수,15:20~16:40,1과학실(후관 1층)
+9.14.~12.31.,수학A(1-2학년),월/수/금,13:00~13:50,늘봄교실6(후관 4층)
+9.14.~12.31.,수학B(3-6학년),월/수/금,14:00~14:50,늘봄교실6(후관 4층)
+9.14.~12.31.,수학C(5-6학년),월/수/금,15:00~15:50,늘봄교실6(후관 4층)
+9.14.~12.31.,역사A,화,13:50~15:10,늘봄교실4(3층 연결통로)
+9.14.~12.31.,역사B,화,15:20~16:40,늘봄교실4(3층 연결통로)
+9.14.~12.31.,영어A(Dream),화/목,13:50~14:40,늘봄교실6(후관 4층)
+9.14.~12.31.,영어B(Run),화/목,14:50~15:40,늘봄교실6(후관 4층)
+9.14.~12.31.,영어C(Jump),화/목,15:50~16:40,늘봄교실6(후관 4층)
+9.14.~12.31.,요리A,월,13:00~14:20,커뮤니티실(본관 1층)
+9.14.~12.31.,요리B,월,14:30~15:50,커뮤니티실(본관 1층)
+9.14.~12.31.,요리C,금,13:00~14:20,커뮤니티실(본관 1층)
+9.14.~12.31.,요리D,금,14:30~15:50,커뮤니티실(본관 1층)
+9.14.~12.31.,우쿨렐레&통기타A,수,13:50~15:10,음악실(후관 5층)
+9.14.~12.31.,웹툰A,화,13:50~15:10,늘봄교실5(3층 연결통로)
+9.14.~12.31.,웹툰B,화,15:20~16:40,늘봄교실5(3층 연결통로)
+9.14.~12.31.,음악줄넘기A,월,13:00~13:50,강당(본관 3층)
+9.14.~12.31.,음악줄넘기B,월,14:00~14:50,강당(본관 3층)
+9.14.~12.31.,음악줄넘기C,월,15:00~15:50,강당(본관 3층)
+9.14.~12.31.,주산A,월,13:00~14:20,늘봄교실4(3층 연결통로)
+9.14.~12.31.,주산B,월,14:30~15:50,늘봄교실4(3층 연결통로)
+9.14.~12.31.,창의과학A,월,13:00~14:20,1과학실(후관 1층)
+9.14.~12.31.,창의과학B,월,14:30~15:50,1과학실(후관 1층)
+9.14.~12.31.,체스A,월,13:00~14:20,늘봄교실5(3층 연결통로)
+9.14.~12.31.,체스B,월,14:30~15:50,늘봄교실5(3층 연결통로)
+9.14.~12.31.,축구A,목,13:50~15:10,강당(본관 3층)
+9.14.~12.31.,축구B,목,15:20~16:40,강당(본관 3층)
+9.14.~12.31.,컴퓨터(꾸러기코딩),화/목,13:50~14:40,컴퓨터실(2층 연결통로)
+9.14.~12.31.,컴퓨터(자격A),화/수,14:50~15:40,컴퓨터실(2층 연결통로)
+9.14.~12.31.,컴퓨터(자격B),목/금,15:50~16:40,컴퓨터실(2층 연결통로)
+9.14.~12.31.,컴퓨터(컴마스터),목/금,14:50~15:40,컴퓨터실(2층 연결통로)
+9.14.~12.31.,컴퓨터(컴박사),수/금,13:50~14:40,컴퓨터실(2층 연결통로)
+9.14.~12.31.,컴퓨터(코딩자격),월,14:40~16:20,컴퓨터실(2층 연결통로)
+9.14.~12.31.,클레이A,화,13:50~15:10,커뮤니티실(본관 1층)
+9.14.~12.31.,클레이B,화,15:20~16:40,커뮤니티실(본관 1층)
+9.14.~12.31.,탁구A,수,13:50~15:10,강당(본관 3층)
+9.14.~12.31.,탁구B,수,15:20~16:40,강당(본관 3층)
+9.14.~12.31.,피아노(주2A),월/금,13:00~13:50,피아노실(후관 5층)
+9.14.~12.31.,피아노(주2B),월/금,14:00~14:50,피아노실(후관 5층)
+9.14.~12.31.,피아노(주2C),월/금,15:00~15:50,피아노실(후관 5층)
+9.14.~12.31.,피아노(주3A),화/수/목,13:50~14:40,피아노실(후관 5층)
+9.14.~12.31.,피아노(주3B),화/수/목,14:50~15:40,피아노실(후관 5층)
+9.14.~12.31.,피아노(주3C),화/수/목,15:50~16:40,피아노실(후관 5층)
+9.14.~12.31.,한자A,금,13:00~14:20,늘봄교실5(3층 연결통로)
+9.14.~12.31.,한자B,금,14:30~15:50,늘봄교실5(3층 연결통로)`;
+
+        const colorMap = {
+            blue: 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-400',
+            green: 'bg-green-50 text-green-700 border-green-200 hover:border-green-400',
+            purple: 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-400',
+            pink: 'bg-pink-50 text-pink-700 border-pink-200 hover:border-pink-400',
+            teal: 'bg-teal-50 text-teal-700 border-teal-200 hover:border-teal-400',
+            rose: 'bg-rose-50 text-rose-700 border-rose-200 hover:border-rose-400',
+            amber: 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-400',
+            indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-400',
+            orange: 'bg-orange-50 text-orange-700 border-orange-200 hover:border-orange-400',
+            cyan: 'bg-cyan-50 text-cyan-700 border-cyan-200 hover:border-cyan-400',
+            yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:border-yellow-400'
+        };
+
+        const colorKeys = Object.keys(colorMap);
+        
+        // 과목명에서 분반(A, B, 1, 2)이나 괄호(Dream 등)를 완벽하게 제거하여 같은 그룹으로 묶는 함수
+        function getBaseSubjectName(subject) {
+            return subject.replace(/\s*\([^)]*\)/g, '') // 괄호와 그 안의 내용 제거 (예: (Dream))
+                          .replace(/\s*[A-Za-z0-9]+$/g, '') // 끝에 붙은 알파벳이나 숫자 제거 (예: A, 1)
+                          .trim() || subject; // 다 지워지면 원본 유지
+        }
+
+        // 과목명에 따라 고유한 색상을 일관되게 부여하는 함수
+        function getColorForSubject(subject) {
+            let hash = 0;
+            const pureSubject = getBaseSubjectName(subject);
+            for (let i = 0; i < pureSubject.length; i++) {
+                hash = pureSubject.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colorKeys[Math.abs(hash) % colorKeys.length];
+        }
+
+        // CSV Parser
+        let classesData = [];
+        let periods = [];
+        let idCounter = 1;
+        const commonData = { capacity: 20, desc: '상세 강의 계획서는 홈페이지 공지사항을 참조해주세요.' };
+        
+        const lines = rawCSV.trim().split(/\r?\n/);
+        lines.shift(); // 헤더 제거
+        
+        lines.forEach(line => {
+            if (!line.trim()) return;
+            const parts = line.split(',');
+            if (parts.length < 5) return;
+            
+            const period = parts[0].trim();
+            const subject = parts[1].trim();
+            const daysStr = parts[2].trim();
+            const time = parts[3].trim();
+            const room = parts[4].trim();
+            const color = getColorForSubject(subject);
+            
+            if(!periods.includes(period)) {
+                periods.push(period);
+            }
+            
+            // "화/목" 과 같은 데이터 분리 처리
+            const daysArray = daysStr.split('/');
+            daysArray.forEach(day => {
+                classesData.push({
+                    id: idCounter++,
+                    period: period,
+                    subject: subject,
+                    day: day.trim(),
+                    time: time,
+                    room: room,
+                    color: color,
+                    ...commonData
+                });
+            });
+        });
+
+        const days = ['월', '화', '수', '목', '금'];
+        let searchQuery = '';
+        let currentDay = '전체'; 
+        
+        // 운영 기간을 고정 배열로 설정
+        const targetPeriods = ["6.15.~7.24.", "7.27.~7.31.", "8.3.~8.14.", "8.18.~9.11.", "9.14.~12.31."];
+        let currentPeriod = targetPeriods[0];
+
+        // DOM Elements - 초기화를 위해 전역 변수로 선언만 해둡니다.
+        let modal, closeModalBtn, closeModalBtn2, searchInput, helpBtn;
+
+        // Initialize App
+        function init() {
+            // 화면 로딩이 완전히 끝난 후 DOM 요소들을 연결합니다 (에러 방지)
+            modal = document.getElementById('classModal');
+            closeModalBtn = document.getElementById('closeModalBtn');
+            closeModalBtn2 = document.getElementById('closeModalBtn2');
+            searchInput = document.getElementById('searchInput');
+            helpBtn = document.getElementById('helpBtn');
+
+            renderPeriods();
+            renderFilters();
+            renderSchedule();
+            setupEventListeners();
+        }
+
+        // Render Period Buttons
+        function renderPeriods() {
+            const periodContainer = document.getElementById('periodSelect');
+            if (!periodContainer) return;
+            
+            periodContainer.innerHTML = targetPeriods.map(p => `
+                <button onclick="setPeriod('${p}')" 
+                    class="px-3 py-1.5 text-sm font-semibold rounded-lg transition-all border shadow-sm whitespace-nowrap ${
+                        currentPeriod === p 
+                        ? 'bg-indigo-600 text-white border-indigo-600' 
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                    }">
+                    ${p}
+                </button>
+            `).join('');
+        }
+
+        // Set Period function
+        window.setPeriod = function(period) {
+            currentPeriod = period;
+            renderPeriods();
+            renderSchedule();
+        }
+
+        // Render Filter Buttons
+        function renderFilters() {
+            const dayContainer = document.getElementById('dayFilters');
+            if (!dayContainer) return;
+            
+            const dayOptions = ['전체', ...days];
+            dayContainer.innerHTML = dayOptions.map(day => `
+                <button onclick="setDay('${day}')" 
+                    class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        currentDay === day 
+                        ? 'bg-indigo-600 text-white shadow-md' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }">
+                    ${day === '전체' ? '전체 요일' : day + '요일'}
+                </button>
+            `).join('');
+        }
+
+        // Set State functions
+        window.setDay = function(day) {
+            currentDay = day;
+            renderFilters();
+            renderSchedule();
+        }
+
+        // Render the main schedule grid
+        function renderSchedule() {
+            const container = document.getElementById('scheduleContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+
+            // 7.27.~7.31. 기간 특별 안내 문구 처리
+            if (currentPeriod === "7.27.~7.31.") {
+                container.className = "col-span-full flex justify-center py-10";
+                container.innerHTML = `
+                    <div class="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-gray-100 text-center max-w-2xl w-full fade-in">
+                        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-500 shadow-sm">
+                            <i class="ph ph-coffee text-4xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4 tracking-tight">프로그램 운영 잠시 멈춤</h3>
+                        <p class="text-gray-600 text-lg md:text-xl leading-relaxed mb-6">
+                            더욱 알찬 프로그램을 준비하기 위하여<br>
+                            <span class="font-bold text-indigo-600">7.27.(월)~7.31.(금) 일주일 동안</span><br>
+                            모든 프로그램 운영을 잠시 쉬어갑니다.
+                        </p>
+                        <div class="w-12 h-1 bg-gray-200 mx-auto mb-6 rounded-full"></div>
+                        <p class="text-gray-500 font-medium">학부모님들의 너른 양해 부탁드립니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let daysToRender = currentDay === '전체' ? days : [currentDay];
+            let totalClassesShown = 0;
+
+            if (daysToRender.length === 1) {
+                // 1. 특정 요일 선택 시: 과목별로 그룹화하여 가로로 나열
+                container.className = "flex flex-col gap-6";
+                const day = daysToRender[0];
+
+                const dayClasses = classesData.filter(cls => {
+                    const matchPeriod = cls.period === currentPeriod;
+                    const matchDay = cls.day === day;
+                    const searchStr = searchQuery.toLowerCase();
+                    const matchSearch = searchQuery === '' || 
+                                        cls.subject.toLowerCase().includes(searchStr) || 
+                                        cls.room.toLowerCase().includes(searchStr);
+                    return matchPeriod && matchDay && matchSearch;
+                });
+
+                totalClassesShown += dayClasses.length;
+
+                if (dayClasses.length > 0) {
+                    // 과목명 기준으로 그룹화 (수학1, 수학2 등을 '수학'으로 완벽하게 묶음)
+                    const grouped = {};
+                    dayClasses.forEach(cls => {
+                        let groupName = getBaseSubjectName(cls.subject);
+                        if (!grouped[groupName]) grouped[groupName] = [];
+                        grouped[groupName].push(cls);
+                    });
+
+                    // 요일 헤더
+                    const headerContainer = document.createElement('div');
+                    headerContainer.className = "flex items-center gap-3 border-b-2 border-gray-200 pb-3 mb-2 px-2";
+                    headerContainer.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
+                            ${day}
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800">${day}요일 개설 강좌</h2>
+                        <span class="ml-auto bg-white border border-gray-200 text-gray-600 text-sm py-1 px-3 rounded-full font-medium shadow-sm">총 ${dayClasses.length}건</span>
+                    `;
+                    container.appendChild(headerContainer);
+
+                    // 과목별 행 생성
+                    Object.keys(grouped).sort().forEach((subjectGroup, groupIndex) => {
+                        const subjectClasses = grouped[subjectGroup];
+                        
+                        // 강좌명(가나다) 순으로 정렬 후, 같으면 시간순으로 정렬
+                        subjectClasses.sort((a, b) => {
+                            if (a.subject === b.subject) {
+                                return a.time.localeCompare(b.time);
+                            }
+                            return a.subject.localeCompare(b.subject, 'ko');
+                        });
+
+                        const section = document.createElement('div');
+                        section.className = "bg-white p-5 rounded-2xl shadow-sm border border-gray-100 fade-in";
+                        section.style.animationDelay = `${groupIndex * 0.05}s`;
+
+                        const subjectHeader = document.createElement('h3');
+                        subjectHeader.className = "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-l-4 border-indigo-500 pl-3";
+                        subjectHeader.textContent = subjectGroup;
+                        section.appendChild(subjectHeader);
+
+                        // 가로 나열을 위한 Flex 컨테이너 (모바일 화면에서도 세로로 쌓이지 않고 가로로 스크롤됨)
+                        const grid = document.createElement('div');
+                        grid.className = "flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x";
+
+                        subjectClasses.forEach((cls) => {
+                            const styleClass = colorMap[cls.color] || colorMap['blue'];
+                            const card = document.createElement('div');
+                            card.className = `snap-start flex-shrink-0 w-72 border rounded-xl p-4 transition-all duration-200 bg-white ${styleClass}`;
+                            
+                            card.innerHTML = `
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="inline-flex items-center gap-1 text-xs font-bold bg-white bg-opacity-70 px-2 py-1 rounded text-gray-700 mix-blend-multiply border border-black border-opacity-10">
+                                        <i class="ph ph-clock"></i> ${cls.time}
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-lg mb-2 tracking-tight text-gray-900">${cls.subject}</h4>
+                                <div class="flex flex-col gap-1 text-xs text-gray-700 bg-white bg-opacity-50 p-2.5 rounded-lg border border-white">
+                                    <div class="flex items-center gap-1.5"><i class="ph ph-map-pin-line text-lg"></i> ${cls.room}</div>
+                                </div>
+                            `;
+                            
+                            grid.appendChild(card);
+                        });
+
+                        section.appendChild(grid);
+                        container.appendChild(section);
+                    });
+                }
+            } else {
+                // 2. 전체 요일 선택 시
+                container.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6";
+
+                daysToRender.forEach(day => {
+                    const dayClasses = classesData.filter(cls => {
+                        const matchPeriod = cls.period === currentPeriod;
+                        const matchDay = cls.day === day;
+                        const searchStr = searchQuery.toLowerCase();
+                        const matchSearch = searchQuery === '' || 
+                                            cls.subject.toLowerCase().includes(searchStr) || 
+                                            cls.room.toLowerCase().includes(searchStr);
+                        return matchPeriod && matchDay && matchSearch;
+                    });
+
+                    totalClassesShown += dayClasses.length;
+                    
+                    // 강좌명(가나다) 순으로 정렬 후, 같으면 시간순으로 정렬
+                    dayClasses.sort((a, b) => {
+                        if (a.subject === b.subject) {
+                            return a.time.localeCompare(b.time);
+                        }
+                        return a.subject.localeCompare(b.subject, 'ko');
+                    });
+
+                    const col = document.createElement('div');
+                    col.className = 'flex flex-col gap-3';
+
+                    const header = document.createElement('div');
+                    header.className = 'flex items-center gap-2 pb-3 border-b border-gray-200 mb-1 sticky top-16 bg-[#f3f4f6] z-0 pt-2';
+                    header.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                            ${day}
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg">${day}요일</h3>
+                        <span class="ml-auto bg-gray-200 text-gray-600 text-xs py-1 px-2 rounded-full font-medium">${dayClasses.length}건</span>
+                    `;
+                    col.appendChild(header);
+
+                    if (dayClasses.length === 0) {
+                        col.innerHTML += `
+                            <div class="bg-white border border-dashed border-gray-300 rounded-xl p-8 text-center text-gray-400 fade-in mt-2">
+                                <i class="ph ph-folder-open text-3xl mb-2"></i>
+                                <p class="text-sm">해당 조건의 강좌가 없습니다</p>
+                            </div>
+                        `;
+                    } else {
+                        dayClasses.forEach((cls, index) => {
+                            const styleClass = colorMap[cls.color] || colorMap['blue'];
+                            const card = document.createElement('div');
+                            card.className = `border rounded-xl p-4 transition-all duration-200 shadow-sm fade-in bg-white ${styleClass}`;
+                            card.style.animationDelay = `${(index % 10) * 0.05}s`;
+                            
+                            card.innerHTML = `
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="inline-flex items-center gap-1 text-xs font-bold bg-white bg-opacity-70 px-2 py-1 rounded text-gray-700 mix-blend-multiply border border-black border-opacity-10">
+                                        <i class="ph ph-clock"></i> ${cls.time}
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-lg mb-2 tracking-tight text-gray-900">${cls.subject}</h4>
+                                <div class="flex flex-col gap-1 text-xs text-gray-700 bg-white bg-opacity-50 p-2.5 rounded-lg border border-white">
+                                    <div class="flex items-center gap-1.5"><i class="ph ph-map-pin-line text-lg"></i> ${cls.room}</div>
+                                </div>
+                            `;
+                            
+                            col.appendChild(card);
+                        });
+                    }
+                    
+                    container.appendChild(col);
+                });
+            }
+
+            if (totalClassesShown === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-20 flex flex-col items-center justify-center text-center">
+                        <div class="w-24 h-24 bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                            <i class="ph ph-magnifying-glass text-4xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">검색 결과가 없습니다</h3>
+                        <p class="text-gray-500 max-w-sm">
+                            조건에 맞는 강좌가 없습니다. 다른 요일이나 검색어를 입력해 보세요.
+                        </p>
+                        <button onclick="document.getElementById('searchInput').value=''; searchQuery=''; setDay('전체');" class="mt-6 px-6 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors shadow-sm">
+                            필터 초기화
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Modal Controls
+        function openModal(cls) {
+            document.getElementById('modalSubject').textContent = cls.subject;
+            document.getElementById('modalTime').textContent = `${cls.day}요일 ${cls.time}`;
+            document.getElementById('modalRoom').textContent = cls.room;
+            document.getElementById('modalCapacity').textContent = `${cls.capacity}명 내외`;
+            document.getElementById('modalDescription').textContent = cls.desc;
+            
+            document.getElementById('modalBadges').innerHTML = `
+                <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-gray-100 text-gray-600">${cls.time}</span>
+            `;
+
+            if(modal) modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            if(modal) modal.classList.add('hidden');
+        }
+
+        function setupEventListeners() {
+            if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+            if(closeModalBtn2) closeModalBtn2.addEventListener('click', closeModal);
+            
+            if(modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closeModal();
+                });
+            }
+
+            if(helpBtn) {
+                helpBtn.addEventListener('click', () => {
+                    // iframe 보안 정책(sandbox)으로 인한 브라우저 기본 alert 창 차단을 방지하기 위해 커스텀 모달로 대체
+                    document.getElementById('modalSubject').textContent = '안내사항';
+                    document.getElementById('modalTime').textContent = '-';
+                    document.getElementById('modalRoom').textContent = '-';
+                    document.getElementById('modalCapacity').textContent = '-';
+                    document.getElementById('modalDescription').textContent = '강좌 관련 세부 사항이나 수강 신청 방법은 각 학교 공지사항을 확인해 주세요.';
+                    document.getElementById('modalBadges').innerHTML = '';
+                    if(modal) modal.classList.remove('hidden');
+                });
+            }
+            
+            if(searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.trim().toLowerCase();
+                    renderSchedule();
+                });
+            }
+        }
+
+        // 아주 안전한 방식으로 초기화 스크립트 실행 (미리보기 화면 대응)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
