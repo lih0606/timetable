@@ -51,16 +51,23 @@
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between py-4 items-start sm:items-center">
-                <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5 overflow-hidden w-full">
-                    <div class="flex items-center gap-2 shrink-0">
-                        <i class="ph-fill ph-student text-indigo-600 text-3xl"></i>
-                        <h1 class="text-xl font-bold text-gray-900 tracking-tight">청라 방과후 시간표</h1>
-                    </div>
-                    <!-- 요일 필터 (월,화,수,목,금 버튼) -->
-                    <div id="dayFilters" class="flex gap-2 overflow-x-auto hide-scrollbar pb-1 w-full justify-start md:justify-start">
+            <div class="flex flex-col py-4 items-center">
+                <!-- Title centered -->
+                <div class="flex items-center justify-center gap-2 mb-4 w-full">
+                    <i class="ph-fill ph-student text-indigo-600 text-3xl"></i>
+                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">청라 방과후 시간표</h1>
+                </div>
+                
+                <!-- Day Filters and Search Icon -->
+                <div class="flex items-center justify-center gap-2 overflow-x-auto hide-scrollbar pb-1 w-full max-w-lg">
+                    <div id="dayFilters" class="flex gap-2 shrink-0">
                         <!-- Buttons injected by JS -->
                     </div>
+                    
+                    <!-- Search Icon Button -->
+                    <button id="openSearchBtn" class="p-2 ml-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent focus:outline-none">
+                        <i class="ph ph-magnifying-glass text-xl"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -69,22 +76,6 @@
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- Controls / Filters -->
-        <div class="bg-white rounded-2xl shadow-sm p-5 mb-8 border border-gray-100 flex justify-center">
-            
-            <!-- Search Input -->
-            <div class="w-full md:w-1/2 lg:w-1/3">
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="ph ph-magnifying-glass text-gray-400 text-lg"></i>
-                    </div>
-                    <input type="text" id="searchInput" placeholder="강좌명, 장소 검색..." 
-                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-colors shadow-sm">
-                </div>
-            </div>
-
-        </div>
-
         <!-- Schedule Grid -->
         <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <!-- Columns injected by JS -->
@@ -99,31 +90,31 @@
                 <i class="ph ph-phone text-lg"></i>
                 문의: 인천청라초등학교 늘봄지원실 (032-509-9593)
             </p>
-        </div>
-    </footer>
-
-    <!-- Class Detail Modal (Help Only) -->
-    <div id="classModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-            <div class="p-6">
-                <div class="flex justify-between items-start mb-4">
-                    <div id="modalBadges" class="flex gap-2 mb-2"></div>
-                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="ph ph-x text-2xl"></i>
-                    </button>
-                </div>
-                <h3 id="modalSubject" class="text-2xl font-bold text-gray-900 mb-1">안내사항</h3>
-                
-                <div class="mt-6">
-                    <p id="modalDescription" class="text-sm text-gray-600 leading-relaxed">
-                        강좌 관련 세부 사항이나 수강 신청 방법은 학교 홈페이지 공지사항을 확인해 주세요.
-                    </p>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-end">
-                <button id="closeModalBtn2" class="px-5 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm">
-                    닫기
+    <!-- Class Detail Modal (Help Only) - Removed as it's no longer used -->
+    
+    <!-- Search Modal -->
+    <div id="searchModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-start justify-center pt-20 px-4 transition-opacity fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                    <i class="ph ph-magnifying-glass text-indigo-600"></i> 강좌 검색
+                </h3>
+                <button id="closeSearchBtn" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                    <i class="ph ph-x text-xl"></i>
                 </button>
+            </div>
+            <div class="p-6">
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="ph ph-magnifying-glass text-gray-400 text-lg"></i>
+                    </div>
+                    <input type="text" id="searchInputModal" placeholder="강좌명, 장소 검색..." 
+                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-base transition-colors shadow-sm" autofocus>
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button id="resetSearchBtn" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">초기화</button>
+                    <button id="applySearchBtn" class="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm">찾기</button>
+                </div>
             </div>
         </div>
     </div>
@@ -304,15 +295,16 @@
         let currentDay = '전체'; 
 
         // DOM Elements
-        let modal, closeModalBtn, closeModalBtn2, searchInput, helpBtn;
+        let searchModal, openSearchBtn, closeSearchBtn, searchInputModal, applySearchBtn, resetSearchBtn;
 
         // Initialize App
         function init() {
-            modal = document.getElementById('classModal');
-            closeModalBtn = document.getElementById('closeModalBtn');
-            closeModalBtn2 = document.getElementById('closeModalBtn2');
-            searchInput = document.getElementById('searchInput');
-            helpBtn = document.getElementById('helpBtn');
+            searchModal = document.getElementById('searchModal');
+            openSearchBtn = document.getElementById('openSearchBtn');
+            closeSearchBtn = document.getElementById('closeSearchBtn');
+            searchInputModal = document.getElementById('searchInputModal');
+            applySearchBtn = document.getElementById('applySearchBtn');
+            resetSearchBtn = document.getElementById('resetSearchBtn');
 
             renderFilters();
             renderSchedule();
@@ -512,10 +504,10 @@
                             <i class="ph ph-magnifying-glass text-4xl text-gray-400"></i>
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">검색 결과가 없습니다</h3>
-                        <p class="text-gray-500 max-w-sm">
-                            조건에 맞는 강좌가 없습니다. 다른 요일이나 검색어를 입력해 보세요.
+                        <p class="text-gray-500 max-w-sm mb-6">
+                            '${searchQuery}'에 대한 조건에 맞는 강좌가 없습니다. 다른 요일이나 검색어를 입력해 보세요.
                         </p>
-                        <button onclick="document.getElementById('searchInput').value=''; searchQuery=''; setDay('전체');" class="mt-6 px-6 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors shadow-sm">
+                        <button onclick="clearSearchAndReset()" class="px-6 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors shadow-sm">
                             필터 초기화
                         </button>
                     </div>
@@ -523,25 +515,65 @@
             }
         }
 
+        function clearSearchAndReset() {
+            if(searchInputModal) searchInputModal.value = '';
+            searchQuery = '';
+            setDay('전체');
+            closeSearch();
+        }
+
         // Modal Controls
-        function closeModal() {
-            if(modal) modal.classList.add('hidden');
+        function openSearch() {
+            if(searchModal) {
+                searchModal.classList.remove('hidden');
+                // 약간의 딜레이를 주어 모달이 렌더링된 후 포커스가 가도록 함
+                setTimeout(() => {
+                    if(searchInputModal) searchInputModal.focus();
+                }, 100);
+            }
+        }
+
+        function closeSearch() {
+            if(searchModal) searchModal.classList.add('hidden');
+        }
+
+        function applySearch() {
+            if(searchInputModal) {
+                searchQuery = searchInputModal.value.trim().toLowerCase();
+            }
+            renderSchedule();
+            closeSearch();
         }
 
         function setupEventListeners() {
-            if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-            if(closeModalBtn2) closeModalBtn2.addEventListener('click', closeModal);
+            // Search Modal Events
+            if(openSearchBtn) openSearchBtn.addEventListener('click', openSearch);
+            if(closeSearchBtn) closeSearchBtn.addEventListener('click', closeSearch);
             
-            if(modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) closeModal();
+            if(searchModal) {
+                searchModal.addEventListener('click', (e) => {
+                    if (e.target === searchModal) closeSearch();
                 });
             }
             
-            if(searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    searchQuery = e.target.value.trim().toLowerCase();
+            if(resetSearchBtn) {
+                resetSearchBtn.addEventListener('click', () => {
+                    if(searchInputModal) searchInputModal.value = '';
+                    searchQuery = '';
                     renderSchedule();
+                });
+            }
+
+            if(applySearchBtn) {
+                applySearchBtn.addEventListener('click', applySearch);
+            }
+
+            // 엔터키 입력 시 검색 적용
+            if(searchInputModal) {
+                searchInputModal.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        applySearch();
+                    }
                 });
             }
         }
